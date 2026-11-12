@@ -1,0 +1,14 @@
+# Ensure the Windows batch file always uses CRLF line endings,
+# regardless of the user's git autocrlf setting or the platform
+# the repo is checked out on.  Windows batch files misbehave with
+# LF-only line endings (especially inside if/for blocks).
+ubuntu_migration.cmd text eol=crlf
+
+# Keep shell scripts with LF endings.
+*.sh text eol=lf
+
+# Markdown and other text stay as-is.
+*.md text
+
+# The test scripts run on any bash-capable machine; keep LF.
+tests/*.sh text eol=lf

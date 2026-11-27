@@ -2,11 +2,7 @@ name: tests
 
 on:
   push:
-    paths:
-      - 'ubuntu-migration/**'
   pull_request:
-    paths:
-      - 'ubuntu-migration/**'
   workflow_dispatch:
 
 jobs:
@@ -15,6 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run CMD script textual checks
-        run: bash ubuntu-migration/tests/test_cmd_syntax.sh
+        run: bash tests/test_cmd_syntax.sh
       - name: Run Bash script syntax checks
-        run: bash ubuntu-migration/tests/test_bash_syntax.sh
+        run: bash tests/test_bash_syntax.sh

@@ -62,4 +62,18 @@ if ! iconv -f UTF-8 -t UTF-8 "$SCRIPT" >/dev/null 2>&1; then
 fi
 echo "OK: 文件为合法 UTF-8 编码"
 
+# 7) blkid -t 必须带 NAME=value token（否则一个盘都找不到）
+if grep -qE 'blkid -t (ntfs|exfat)' "$SCRIPT"; then
+    echo "错误：blkid -t 需要 NAME=value 形式，例如 TYPE=ntfs"
+    exit 1
+fi
+echo "OK: blkid 使用 TYPE= 形式"
+
+# 8) CI 工作流不能再用不存在的 ubuntu-migration/ 子目录做路径过滤
+if grep -qF 'ubuntu-migration/**' .github/workflows/tests.yml; then
+    echo "错误：CI 路径过滤指向仓库里不存在的子目录"
+    exit 1
+fi
+echo "OK: CI 路径过滤正确"
+
 echo "PASS: Bash 最小测试全部通过"

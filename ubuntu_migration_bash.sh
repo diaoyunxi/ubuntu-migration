@@ -40,8 +40,9 @@ else
 fi
 
 # 日志文件（纯文本、无 ANSI），便于事后审计。可用 LOG_FILE 覆盖。
+# 追加写，保留历次运行记录（README 承诺"追加到文件"）。
 LOG_FILE="${LOG_FILE:-/tmp/ubuntu_migration_bash.log}"
-: > "$LOG_FILE" 2>/dev/null || true
+: >> "$LOG_FILE" 2>/dev/null || true
 
 _append() {
   printf '[%s] %s\n' "$(date '+%F %T' 2>/dev/null || printf '?')" "$1" >> "$LOG_FILE" 2>/dev/null || true
@@ -137,9 +138,11 @@ find_windows_drives() {
     # 列出 NTFS 或 exFAT 块设备，每行一个。
     # 直接按文件系统类型查询 blkid，比解析 export 格式更稳健
     # （后者可能出现共享记录 id 的多行记录）。
+    # 注意 -t 只接受 NAME=value 形式的 token（TYPE=...）；单独写 "ntfs"
+    # 会报 "needs NAME=value pair" 并返回空结果，导致本函数永远查不到盘。
     {
-        blkid -t ntfs -o device 2>/dev/null
-        blkid -t exfat -o device 2>/dev/null
+        blkid -t TYPE=ntfs -o device 2>/dev/null
+        blkid -t TYPE=exfat -o device 2>/dev/null
     } | sort -u
 }
 
@@ -202,7 +205,9 @@ for d in "${WINDOWS_DRIVES[@]}"; do
         continue
     fi
     # 在挂载卷的顶层查找名为 'backup' 的目录（大小写不敏感）。
-    if find "$MOUNT_POINT" -maxdepth 1 -iname 'backup' -type d 2>/dev/null | grep -q .; then
+    # 用 -print -quit 而非 `| grep -q`：脚本启用了 pipefail，grep -q 提前
+    # 退出会让 find 收到 SIGPIPE，导致"明明找到了"却被判为失败。
+    if [ -n "$(find "$MOUNT_POINT" -maxdepth 1 -iname 'backup' -type d -print -quit 2>/dev/null)" ]; then
         chosen="$d"
         lg_info "在 $d 上找到 'backup' 目录。"
         umount "$MOUNT_POINT" 2>/dev/null || true
